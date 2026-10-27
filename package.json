@@ -18,6 +18,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@douyinfe/semi-ui": "^2.77.1",
     "@lexical/react": "^0.12.5",
+    "@mlc-ai/web-llm": "^0.2.86",
     "@monaco-editor/react": "^4.7.0",
     "@vercel/analytics": "^1.2.2",
     "axios": "^1.20.0",
