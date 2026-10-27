@@ -12,6 +12,7 @@ import EnumsContextProvider from "../context/EnumsContext";
 import ViewsContextProvider from "../context/ViewsContext";
 import WorkSpace from "../components/Workspace";
 import { useThemedPage } from "../hooks";
+import WebLLM from "../components/WebLLM";
 
 export default function Editor() {
   useThemedPage();
@@ -30,6 +31,7 @@ export default function Editor() {
                         <TablesContextProvider>
                           <SaveStateContextProvider>
                             <WorkSpace />
+                            <WebLLM />
                           </SaveStateContextProvider>
                         </TablesContextProvider>
                       </ViewsContextProvider>
