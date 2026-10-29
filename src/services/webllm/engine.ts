@@ -70,6 +70,7 @@ export async function loadModel(
 
 export async function* streamChat(
     messages: { role: "system" | "user" | "assistant"; content: string }[],
+    onMetrics?: (tokens: number, speed: number | null) => void,
 ) {
     if (!engine) throw new Error("Modelo não carregado. Chame loadModel() antes.");
 
@@ -82,8 +83,10 @@ export async function* streamChat(
 
     for await (const chunk of chunks) {
         if (chunk.usage) {
-            console.log("[WebLLM] usage:", chunk.usage);
-            console.log("[WebLLM] extra:", chunk.usage.extra);
+            const tokens = chunk.usage.completion_tokens;
+            const speed = chunk.usage.extra?.decode_tokens_per_s ?? null;
+
+            onMetrics?.(tokens, speed);
         }
         yield chunk.choices[0]?.delta.content ?? "";
     }

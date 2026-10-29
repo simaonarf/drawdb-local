@@ -1,21 +1,25 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { loadModel, streamChat, listModels } from "../services/webllm/engine";
 
 export default function WebLLM() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [model, setModel] = useState("");
   const [status, setStatus] = useState("");
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
 
-  const t0 = performance.now();
+  const results = useRef([]);
 
   const handleLoad = async () => {
+    const start = performance.now();
+
     try {
       await loadModel(model, (p) => setStatus(p.text));
-      console.log(
-        `[WebLLM] carregamento: ${((performance.now() - t0) / 1000).toFixed(2)} s`,
-      );
+
+      const end = performance.now();
+      const time = (end - start) / 1000;
+
+      console.log(`[WebLLM] carregamento: ${time.toFixed(2)} s`);
       setStatus("Modelo carregado.");
     } catch (e) {
       setStatus("Erro: " + e.message);
@@ -23,9 +27,50 @@ export default function WebLLM() {
   };
 
   const handleSend = async () => {
+    if (!prompt.trim()) return;
+
     setOutput("");
-    for await (const token of streamChat([{ role: "user", content: prompt }])) {
-      setOutput((prev) => prev + token);
+
+    const start = performance.now();
+
+    let firstToken = null;
+    let tokens = null;
+    let speed = null;
+
+    try {
+      for await (const chunk of streamChat(
+        [{ role: "user", content: prompt }],
+        (total, tokenSpeed) => {
+          tokens = total;
+          speed = tokenSpeed;
+        },
+      )) {
+        if (chunk && firstToken === null) {
+          firstToken = performance.now();
+        }
+
+        setOutput((prev) => prev + chunk);
+      }
+
+      const end = performance.now();
+
+      const result = {
+        model: model,
+        prompt: prompt,
+        totalLatency: Number(((end - start) / 1000).toFixed(2)),
+        timeToFirstToken:
+          firstToken === null
+            ? null
+            : Number(((firstToken - start) / 1000).toFixed(2)),
+        generationSpeed: speed,
+        generatedTokens: tokens,
+      };
+
+      results.current.push(result);
+
+      console.table(results.current);
+    } catch (error) {
+      console.error("[WebLLM] Erro na geração:", error);
     }
   };
 
